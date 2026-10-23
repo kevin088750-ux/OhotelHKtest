@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E6B66">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="房務點數">
+<title>房務點數系統（示範版）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF3F1; --surface:#FFFFFF; --ink:#1D2B2E; --muted:#5B6B68; --line:#D3DDD9;
+  --accent:#0E6B66; --accent-ink:#FFFFFF; --accent-soft:#D8ECE8;
+  --amber:#A86A12; --amber-soft:#F5E7CC; --danger:#B4382F; --tier:#C9DAD5;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111A1B; --surface:#192425; --ink:#E3ECEA; --muted:#93A4A0; --line:#2B3A3B;
+    --accent:#3DB3A8; --accent-ink:#04201D; --accent-soft:#16352F;
+    --amber:#E3A94C; --amber-soft:#3A2C14; --danger:#EC7B70; --tier:#2E4442;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111A1B; --surface:#192425; --ink:#E3ECEA; --muted:#93A4A0; --line:#2B3A3B;
+  --accent:#3DB3A8; --accent-ink:#04201D; --accent-soft:#16352F;
+  --amber:#E3A94C; --amber-soft:#3A2C14; --danger:#EC7B70; --tier:#2E4442;
+  color-scheme:dark;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 120px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",system-ui,sans-serif;
+  font-size:16px;line-height:1.55;font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.ribbon{background:var(--amber-soft);font-size:13px;padding:6px 16px;text-align:center}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar{max-width:1080px;margin:0 auto;padding:10px 16px 0;display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap}
+h1{font-size:20px;font-weight:900;margin:0;flex:1;min-width:110px}
+.month{display:flex;align-items:center;gap:6px;font-size:14px}
+.month input{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:5px 8px;font-weight:700}
+.who{display:flex;align-items:center;gap:8px;font-size:14px}
+.badge{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:700;background:var(--accent-soft);color:var(--accent)}
+.badge.admin{background:var(--ink);color:var(--surface)}
+.badge.hk{background:var(--amber-soft);color:var(--amber)}
+.link{border:0;background:none;color:var(--muted);text-decoration:underline;padding:4px}
+.tabs{max-width:1080px;margin:0 auto;padding:0 8px;display:flex;gap:4px;min-height:8px}
+.tab{border:0;background:none;padding:12px 12px 10px;font-weight:700;color:var(--muted);border-bottom:3px solid transparent}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+
+main{max-width:1080px;margin:0 auto;padding:16px 16px 96px}
+.note{font-size:13px;color:var(--muted);margin:0 0 12px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 14px;font-weight:700}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.warn{border-color:var(--danger);color:var(--danger)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.err{color:var(--danger);font-size:13px;min-height:20px;margin:6px 0 0}
+
+/* login */
+.login{max-width:380px;margin:6vh auto 0;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px 24px}
+.login h1{font-size:26px;margin:0 0 4px}
+.login label{display:block;font-weight:700;margin:18px 0 6px}
+.login input{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:12px 14px;font-size:20px;letter-spacing:.04em}
+.login .btn{width:100%;margin-top:12px;padding:12px}
+.code{background:var(--amber-soft);border-radius:10px;padding:10px 12px;font-size:14px;margin-top:12px}
+.code b{font-size:20px;letter-spacing:.15em}
+.demo{margin-top:22px;border-top:1px solid var(--line);padding-top:14px}
+.demo p{font-size:13px;color:var(--muted);margin:0 0 8px}
+.acc{display:flex;justify-content:space-between;align-items:center;width:100%;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 12px;margin-bottom:6px;text-align:left}
+.acc span{font-size:13px;color:var(--muted)}
+
+/* my points (房務) */
+.hero{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px}
+.hero p{margin:0;color:var(--muted)}
+.hero strong{display:block;font-size:64px;font-weight:900;line-height:1.05;letter-spacing:-.02em;margin:6px 0 2px}
+.meter{height:12px;border-radius:999px;background:var(--bg);border:1px solid var(--line);overflow:hidden;margin:14px 0 8px;position:relative}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:999px}
+.meter.over i{background:var(--amber)}
+.hero .state{font-weight:700;color:var(--ink)}
+.hero .state.over{color:var(--amber)}
+.stats{display:flex;gap:10px;margin-top:14px}
+.stats div{flex:1;background:var(--bg);border-radius:10px;padding:8px 12px}
+.stats b{display:block;font-size:22px}
+.stats span{font-size:13px;color:var(--muted)}
+.list h2{font-size:16px;margin:22px 0 8px}
+.dayrow{display:flex;justify-content:space-between;align-items:center;width:100%;border:0;border-bottom:1px solid var(--line);background:none;padding:12px 4px;text-align:left}
+.dayrow b{font-size:17px}
+.dayrow span{color:var(--muted);font-size:14px}
+.dayrow strong{font-size:17px}
+.daydetail{padding:4px 4px 14px;border-bottom:1px solid var(--line)}
+
+/* day strip / staff / ledger / board */
+.days{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 10px;scrollbar-width:thin}
+.day{flex:0 0 auto;width:46px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 0 5px;text-align:center;line-height:1.2}
+.day b{display:block;font-size:17px}
+.day small{display:block;font-size:11px;color:var(--muted)}
+.day.we small{color:var(--danger)}
+.day .dot{display:block;height:4px;width:4px;border-radius:50%;margin:4px auto 0;background:transparent}
+.day.has .dot{background:var(--accent)}
+.day[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.day[aria-pressed="true"] small{color:inherit;opacity:.75}
+.day[aria-pressed="true"] .dot{background:var(--surface)}
+.staff{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+.person{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px 7px 16px;display:flex;align-items:baseline;gap:8px;font-weight:700}
+.person span{font-weight:500;font-size:13px;color:var(--muted)}
+.person[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.person[aria-pressed="true"] span{color:inherit;opacity:.85}
+.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+@media (min-width:860px){.grid{grid-template-columns:340px minmax(0,1fr);align-items:start}.ledger{position:sticky;top:calc(env(safe-area-inset-top,0px) + 112px)}}
+.ledger{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.ledger h2{font-size:15px;font-weight:500;color:var(--muted);margin:0}
+.total{display:flex;align-items:baseline;gap:10px;margin:2px 0 12px}
+.total strong{font-size:44px;font-weight:900;line-height:1.1}
+.total span{color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;min-height:34px;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:3px 6px 3px 9px;font-size:14px;display:inline-flex;align-items:center;gap:6px}
+.chip em{font-style:normal;color:var(--muted);font-size:12px}
+.chip i{font-style:normal;color:var(--muted);font-size:15px;line-height:1}
+.chip.cont{background:var(--amber-soft);border-color:transparent}
+span.chip{padding-right:9px}
+.empty{color:var(--muted);font-size:14px;margin:4px 0}
+.mode{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:10px}
+.mode button{border:0;background:var(--surface);padding:8px 6px;font-weight:700;line-height:1.3}
+.mode button small{display:block;font-weight:500;font-size:12px;color:var(--muted)}
+.mode button+button{border-left:1px solid var(--line)}
+.mode button[aria-pressed="true"][data-m="out"]{background:var(--accent);color:var(--accent-ink)}
+.mode button[aria-pressed="true"][data-m="cont"]{background:var(--amber);color:var(--surface)}
+.mode button[aria-pressed="true"] small{color:inherit;opacity:.85}
+.entry{display:flex;gap:8px}
+.entry input{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 12px;font-size:17px}
+.board h3{font-size:14px;font-weight:700;color:var(--muted);margin:4px 0 8px}
+.floor{margin-bottom:18px}
+.keys{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:8px}
+.key{position:relative;border:1.5px solid var(--tier);background:var(--surface);border-radius:12px 12px 12px 22px;padding:16px 4px 6px;text-align:center;line-height:1.1;min-height:64px}
+.key::before{content:"";position:absolute;top:6px;left:50%;width:8px;height:8px;margin-left:-4px;border-radius:50%;border:1.5px solid var(--tier);background:var(--bg)}
+.key b{display:block;font-size:18px;font-weight:700}
+.key small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.key.top{border-color:var(--accent)}
+.key.top::before{border-color:var(--accent)}
+.key.mine{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.key.mine small{color:inherit;opacity:.85}
+.key.mine::before{background:var(--accent-ink);border-color:var(--accent-ink)}
+.key.cont{background:var(--amber);border-color:var(--amber);color:var(--surface)}
+.key.cont small{color:inherit;opacity:.9}
+.key.cont::before{background:var(--surface);border-color:var(--surface)}
+.key.other{border-style:dashed;color:var(--muted)}
+.key .by{position:absolute;top:3px;right:5px;font-size:11px;font-weight:700;color:var(--amber)}
+
+/* monthly */
+.sum{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.card h3{margin:0;font-size:15px}
+.card strong{display:block;font-size:30px;font-weight:900;line-height:1.2}
+.card p{margin:0;font-size:13px;color:var(--muted)}
+.card .over{color:var(--amber);font-weight:700;font-size:14px}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+.scroll table{min-width:520px}
+th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+.scroll th:first-child,.scroll td:first-child{position:sticky;left:0;background:var(--surface)}
+thead th{font-weight:700}
+tbody tr.we td:first-child{color:var(--danger)}
+td.zero{color:var(--line)}
+tfoot td,tfoot th{font-weight:700;border-top:1px solid var(--line)}
+tfoot tr:first-child td,tfoot tr:first-child th{border-top:2px solid var(--ink);font-weight:900}
+tr.go{cursor:pointer}
+tr.go:hover td{background:var(--accent-soft)}
+
+/* admin */
+.set{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+.set h2{font-size:17px;margin:0 0 4px}
+.users td,.users th{white-space:normal;text-align:left;vertical-align:middle}
+.users input,.users select,.adduser input,.adduser select{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:7px 9px;width:100%;min-width:0}
+.users .off td{opacity:.55}
+.adduser{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 110px auto;gap:8px;margin-top:12px}
+@media (max-width:640px){.adduser{grid-template-columns:1fr 1fr}.users thead{display:none}.users tr{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}.users td{border:0;padding:0}}
+.roles{font-size:14px;margin:8px 0 0;padding-left:18px;color:var(--muted)}
+.ref{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:4px 12px;font-size:14px;margin-top:10px}
+.ref span{display:flex;justify-content:space-between;border-bottom:1px dotted var(--line);padding:2px 0}
+.pe{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px 16px;margin-top:12px}
+.pe div{display:flex;gap:6px;align-items:center}
+.pe input{width:100%;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:7px 9px}
+.pe .fixed{padding:7px 9px;flex:1;font-weight:700}
+.inline input{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:7px 9px}
+.hist{font-size:13px;color:var(--muted);margin:10px 0 0;padding-left:18px}
+
+.toast{position:fixed;left:50%;bottom:0;transform:translateX(-50%);padding:0 0 env(safe-area-inset-bottom,0px);z-index:20;pointer-events:none}
+.toast div{background:var(--ink);color:var(--surface);border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:14px;max-width:90vw;opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s}
+.toast.show div{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.toast div{transition:none}}
+
+/* print */
+#printArea{display:none}
+.rpt{font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;color:#000;background:#fff;font-size:12px;line-height:1.45}
+.rpt h1{font-size:20px;margin:0 0 2px}.rpt .meta{margin:0 0 10px}
+.rpt table{border-collapse:collapse;width:100%;font-size:12px}
+.rpt th,.rpt td{border:1px solid #000;padding:4px 6px;text-align:right;white-space:normal;background:#fff;color:#000}
+.rpt th:first-child,.rpt td:first-child{text-align:left;white-space:nowrap}
+.rpt td.rooms{text-align:left}
+.rpt thead th{background:#eee;text-align:center}
+.rpt table.m th,.rpt table.m td{padding:2px 6px}
+.rpt tfoot th,.rpt tfoot td{font-weight:700}
+.rpt .sign{display:flex;gap:48px;margin-top:36px}.rpt .sign span{flex:1;border-top:1px solid #000;padding-top:4px}
+@page{size:A4;margin:12mm}
+@media print{
+  :root{padding:0}
+  body{background:#fff}
+  body::before,#app,.toast{display:none!important}
+  #printArea{display:block}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"><div></div></div>
+<div id="printArea"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ================= 基本設定 ================= */
+var CONT="續", BASE="0000-00", DEF_TH=300, LS="hk-demo:v1";
+var DEFAULT_POINTS={"301":1.3,"302":1.3,"303":1.3,"305":1.3,"306":1.3,"307":1.3,"308":1.1,"310":1,"311":1,"312":1.3,"313":1.3,"315":1.1,"316":1.2,"317":1.3,"318":1.2,"320":1.1,"321":1.1,"322":1.2,"323":1.1,"325":1.1,"326":1.3,"327":1,"328":1,"330":1,"332":1,
+"501":1.3,"502":1.3,"503":1.3,"505":1.3,"506":1,"507":1,"508":1.1,"510":1,"511":1,"512":1,"513":1.3,"515":1,"516":1.1,"517":1,"518":1.3,"519":1,"520":1,"521":1.1,"522":1.1,"523":1.1,"525":1,"526":1.3,"527":1,"528":1,"530":1.3,"532":1,
+"601":1.3,"602":1.3,"603":1.3,"605":1.3,"606":1.3,"607":1.3,"608":1.1,"610":1,"611":1,"612":1,"613":1.3,"615":1,"616":1.3,"617":1,"618":1.3,"619":1,"620":1,"621":1.3,"622":1.1,"623":1.1,"625":1,"626":1.3,"627":1,"628":1,"630":1,"續":0.5};
+var ROLE={admin:"主管",desk:"櫃檯",hk:"房務"};
+var WEEK=["日","一","二","三","四","五","六"];
+
+/* ================= 小工具 ================= */
+function $(id){return document.getElementById(id);}
+function pad(n){return (n<10?"0":"")+n;}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
+function r2(x){return Math.round(x*100)/100;}
+function fmt(x){var v=r2(x);return (Math.round(Math.abs(v)*100)%10)?v.toFixed(2):v.toFixed(1);}
+function tfmt(v){return v%1?fmt(v):String(v);}
+function daysIn(m){var p=m.split("-");return new Date(+p[0],+p[1],0).getDate();}
+function wd(m,d){var p=m.split("-");return new Date(+p[0],+p[1]-1,d).getDay();}
+function zhMonth(m){var p=m.split("-");return p[0]+"年"+(+p[1])+"月";}
+function zhDate(m,d){return zhMonth(m)+d+"日（週"+WEEK[wd(m,d)]+"）";}
+function normPhone(s){return String(s||"").replace(/\D/g,"");}
+function showPhone(p){return p.length===10?p.slice(0,4)+"-"+p.slice(4,7)+"-"+p.slice(7):p;}
+function byStr(a,b){return a.localeCompare(b,"zh-Hant",{numeric:true});}
+var now=new Date(), thisMonth=now.getFullYear()+"-"+pad(now.getMonth()+1);
+
+/* ================= 資料（示範版存在這個瀏覽器） ================= */
+var DB;
+function save(){try{localStorage.setItem(LS,JSON.stringify(DB));}catch(e){}}
+function load(){try{DB=JSON.parse(localStorage.getItem(LS));}catch(e){DB=null;} if(!DB||!DB.users)DB=seed();}
+function seed(){
+  var users=[
+    {id:"u1",name:"林主管",phone:"0912000001",role:"admin",active:true},
+    {id:"u2",name:"櫃檯小陳",phone:"0912000002",role:"desk",active:true},
+    {id:"u3",name:"黃海權",phone:"0912000003",role:"hk",active:true},
+    {id:"u4",name:"朱芬宜",phone:"0912000004",role:"hk",active:true},
+    {id:"u5",name:"吳錦雲",phone:"0912000005",role:"hk",active:true},
+    {id:"u6",name:"黃玉文",phone:"0912000006",role:"hk",active:true},
+    {id:"u7",name:"陳瑋琳",phone:"0912000007",role:"hk",active:true}];
+  var d={users:users,tables:[{from:BASE,points:DEFAULT_POINTS}],thresholds:[{from:BASE,value:DEF_TH}],entries:{},session:null};
+  // 示範用：本月今天以前的假資料
+  var seedN=11;function rnd(){seedN=(seedN*9301+49297)%233280;return seedN/233280;}
+  var rooms=Object.keys(DEFAULT_POINTS).filter(function(k){return k!==CONT;}),m={};
+  for(var day=1;day<now.getDate();day++){
+    var pool=rooms.slice().sort(function(){return rnd()-.5;}),at=0;
+    users.filter(function(u){return u.role==="hk";}).forEach(function(u){
+      var n=11+Math.floor(rnd()*6),list=[];
+      for(var i=0;i<n&&at<pool.length;i++,at++)list.push(rnd()<.25?CONT+pool[at]:pool[at]);
+      m[day+"_"+u.id]=list;
+    });
+  }
+  d.entries[thisMonth]=m;
+  return d;
+}
+load();
+
+/* ================= 狀態 ================= */
+var S={month:thisMonth,day:now.getDate(),staffId:null,view:null,mode:"out",editPts:null,editTh:null,otp:null,loginErr:"",openDay:null,scrollDay:true};
+var POINTS={},ROOMS=[],FLOORS=[];
+
+function me(){if(!DB.session)return null;var u=userById(DB.session.uid);return u&&u.active?u:null;}
+function userById(id){return DB.users.filter(function(u){return u.id===id;})[0];}
+function isAdmin(){var u=me();return !!u&&u.role==="admin";}
+function canEnter(){var u=me();return !!u&&(u.role==="admin"||u.role==="desk");}
+function hkActive(){return DB.users.filter(function(u){return u.role==="hk"&&u.active;});}
+function monthStaff(){
+  var m=DB.entries[S.month]||{};
+  return DB.users.filter(function(u){return u.role==="hk"&&(u.active||Object.keys(m).some(function(k){return k.split("_")[1]===u.id&&m[k].length;}));});
+}
+function get(d,uid){var m=DB.entries[S.month];return (m&&m[d+"_"+uid])||[];}
+function setRooms(d,uid,list){var m=DB.entries[S.month]||(DB.entries[S.month]={});if(list.length)m[d+"_"+uid]=list;else delete m[d+"_"+uid];save();}
+function isCont(r){return String(r).charAt(0)===CONT;}
+function base(r){return isCont(r)?String(r).slice(1):String(r);}
+function ptOf(r){return isCont(r)?(POINTS[CONT]||0):(POINTS[r]||0);}
+function pts(list){var s=0;(list||[]).forEach(function(r){s+=ptOf(r);});return r2(s);}
+function sorted(list){return list.slice().sort(function(a,b){return a.from<b.from?-1:a.from>b.from?1:0;});}
+function tableFor(m){var pick=null;sorted(DB.tables).forEach(function(t){if(t.from<=m)pick=t;});return pick||sorted(DB.tables)[0];}
+function thresh(){var pick=null;sorted(DB.thresholds).forEach(function(t){if(t.from<=S.month)pick=t;});return pick?+pick.value:DEF_TH;}
+function applyTable(){
+  var t=tableFor(S.month);POINTS={};
+  Object.keys(t.points).forEach(function(k){POINTS[k]=+t.points[k];});
+  if(!(CONT in POINTS))POINTS[CONT]=0.5;
+  ROOMS=Object.keys(POINTS).filter(function(k){return k!==CONT;}).sort(byStr);
+  FLOORS=[];
+  ROOMS.forEach(function(r){var f=/^\d{3,}$/.test(r)?r.slice(0,-2)+" 樓":"其他";var g=FLOORS.filter(function(x){return x.f===f;})[0];if(!g){g={f:f,rooms:[]};FLOORS.push(g);}g.rooms.push(r);});
+}
+function tally(list){var o=0,c=0;list.forEach(function(r){if(isCont(r))c++;else o++;});return {out:o,cont:c};}
+function personMonth(uid){
+  var x={pts:0,out:0,cont:0},n=daysIn(S.month);
+  for(var d=1;d<=n;d++){var l=get(d,uid),k=tally(l);x.pts+=pts(l);x.out+=k.out;x.cont+=k.cont;}
+  x.pts=r2(x.pts);x.cnt=x.out+x.cont;x.over=Math.max(0,r2(x.pts-thresh()));return x;
+}
+applyTable();
+
+/* ================= 共用元件 ================= */
+var tt;function toast(msg){var el=$("toast");el.firstChild.textContent=msg;el.classList.add("show");clearTimeout(tt);tt=setTimeout(function(){el.classList.remove("show");},3200);}
+function arm(btn,label,fn){
+  if(btn.dataset.armed){clearTimeout(btn._t);reset();fn();return;}
+  btn.dataset.orig=btn.textContent;btn.dataset.armed="1";btn.textContent=label;btn.classList.add("warn");
+  btn._t=setTimeout(reset,3500);
+  function reset(){if(!btn.dataset.armed)return;delete btn.dataset.armed;btn.textContent=btn.dataset.orig;btn.classList.remove("warn");}
+}
+function download(name,text,type){
+  var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;
+  document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);
+}
+
+/* ================= 畫面：登入 ================= */
+function vLogin(){
+  var h='<div class="ribbon">示範版：資料只存在這個瀏覽器裡，不會傳到網路上。</div><main><div class="login"><h1>房務點數系統</h1><p class="note">用手機號碼登入</p>';
+  if(!S.otp){
+    h+='<div data-form="phone"><label for="phone">手機號碼</label><input id="phone" inputmode="tel" autocomplete="tel" placeholder="0912345678"><button class="btn primary" type="button" data-submit>取得驗證碼</button></div>';
+  }else{
+    h+='<p style="margin:14px 0 0">驗證碼已傳送到 <b>'+showPhone(S.otp.phone)+'</b></p>'+
+      '<div class="code">示範版不會真的發簡訊，這次的驗證碼是 <b>'+S.otp.code+'</b></div>'+
+      '<div data-form="otp"><label for="otp">輸入 6 位數驗證碼</label><input id="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6"><button class="btn primary" type="button" data-submit>登入</button></div>'+
+      '<button class="link" data-act="otpBack" type="button" style="margin-top:8px">換一個號碼</button>';
+  }
+  h+='<p class="err">'+esc(S.loginErr)+'</p>';
+  h+='<div class="demo"><p>試用帳號（點一下帶入號碼）</p>'+DB.users.filter(function(u){return u.active;}).map(function(u){
+    return '<button class="acc" type="button" data-act="fillPhone" data-phone="'+u.phone+'"><b>'+esc(u.name)+' <span class="badge '+u.role+'">'+ROLE[u.role]+'</span></b><span>'+showPhone(u.phone)+'</span></button>';
+  }).join("")+'<p style="margin-top:10px">不在名單上的號碼無法登入，要由主管在後台開通。</p></div></div></main>';
+  return h;
+}
+
+/* ================= 畫面：外框 ================= */
+function tabsFor(u){return u.role==="hk"?[]:u.role==="desk"?[["daily","每日登記"],["monthly","當月統計"]]:[["daily","每日登記"],["monthly","當月統計"],["admin","後台"]];}
+function vShell(u,body){
+  var tabs=tabsFor(u);
+  return '<div class="ribbon">示範版：資料只存在這個瀏覽器裡，換手機或電腦不會同步。</div>'+
+    '<header><div class="bar"><h1>房務點數</h1>'+
+    '<label class="month">月份 <input type="month" id="month" value="'+S.month+'"></label>'+
+    '<div class="who">'+esc(u.name)+' <span class="badge '+u.role+'">'+ROLE[u.role]+'</span><button class="link" type="button" data-act="logout">登出</button></div></div>'+
+    '<nav class="tabs" role="tablist">'+tabs.map(function(t){return '<button class="tab" role="tab" data-act="tab" data-v="'+t[0]+'" aria-selected="'+(S.view===t[0])+'">'+t[1]+'</button>';}).join("")+'</nav></header>'+
+    '<main>'+body+'</main>';
+}
+
+/* ================= 畫面：房務「我的點數」 ================= */
+function vMine(u){
+  var x=personMonth(u.id),th=thresh(),pct=Math.min(100,x.pts/th*100),n=daysIn(S.month);
+  var h='<div class="hero"><p>'+esc(u.name)+'，'+zhMonth(S.month)+'累積</p><strong>'+fmt(x.pts)+'</strong><p>點</p>'+
+    '<div class="meter'+(x.over?" over":"")+'" role="progressbar" aria-valuenow="'+x.pts+'" aria-valuemax="'+th+'" aria-label="距超額門檻"><i style="width:'+pct+'%"></i></div>'+
+    (x.over?'<p class="state over">已超過門檻 '+tfmt(th)+' 點，超額點數 '+fmt(x.over)+' 點</p>':'<p class="state">距超額門檻 '+tfmt(th)+' 點還差 '+fmt(r2(th-x.pts))+' 點</p>')+
+    '<div class="stats"><div><b>'+x.out+'</b><span>退房間數</span></div><div><b>'+x.cont+'</b><span>續住間數</span></div></div></div>';
+  h+='<div class="list"><h2>每日明細</h2>';
+  var any=false;
+  for(var d=n;d>=1;d--){
+    var l=get(d,u.id);if(!l.length)continue;any=true;
+    var open=S.openDay===d;
+    h+='<button class="dayrow" type="button" data-act="openDay" data-d="'+d+'" aria-expanded="'+open+'"><span><b>'+(+S.month.split("-")[1])+'/'+d+'</b> 週'+WEEK[wd(S.month,d)]+'，'+l.length+' 間</span><strong>'+fmt(pts(l))+' 點</strong></button>';
+    if(open)h+='<div class="daydetail"><div class="chips">'+l.map(function(r){var c=isCont(r);return '<span class="chip'+(c?" cont":"")+'">'+esc(c?(base(r)||"")+" 續住":r)+' <em>'+fmt(ptOf(r))+'</em></span>';}).join("")+'</div></div>';
+  }
+  if(!any)h+='<p class="empty">這個月還沒有登記紀錄。</p>';
+  return h+'</div>';
+}
+
+/* ================= 畫面：每日登記（櫃檯、主管） ================= */
+function findRoom(r){var l=get(S.day,S.staffId);for(var i=l.length-1;i>=0;i--){if(base(l[i])===r)return i;}return -1;}
+function vDaily(){
+  var staff=hkActive();
+  if(!staff.length)return '<p class="empty">目前沒有啟用中的房務人員，請主管到後台新增。</p>';
+  if(!staff.some(function(u){return u.id===S.staffId;}))S.staffId=staff[0].id;
+  var n=daysIn(S.month),mm=+S.month.split("-")[1],h='<div class="days" id="days">';
+  if(S.day>n)S.day=n;
+  for(var d=1;d<=n;d++){
+    var w=wd(S.month,d),has=staff.some(function(u){return get(d,u.id).length;});
+    h+='<button class="day'+(w===0||w===6?" we":"")+(has?" has":"")+'" data-act="day" data-d="'+d+'" aria-pressed="'+(d===S.day)+'" aria-label="'+mm+'月'+d+'日"><b>'+d+'</b><small>'+WEEK[w]+'</small><span class="dot"></span></button>';
+  }
+  h+='</div><div class="staff">'+staff.map(function(u){return '<button class="person" data-act="staff" data-id="'+u.id+'" aria-pressed="'+(u.id===S.staffId)+'">'+esc(u.name)+'<span>'+fmt(pts(get(S.day,u.id)))+'</span></button>';}).join("")+'</div>';
+  h+='<div class="tools"><button class="btn" type="button" data-act="printDay">列印每日報表</button><button class="btn" type="button" data-act="dlDay">下載每日報表</button></div>';
+  var list=get(S.day,S.staffId),who=userById(S.staffId);
+  h+='<div class="grid"><div class="ledger"><h2>'+mm+'月'+S.day+'日（週'+WEEK[wd(S.month,S.day)]+'） '+esc(who.name)+'</h2>'+
+    '<div class="total"><strong>'+fmt(pts(list))+'</strong><span>點，共 '+list.length+' 間</span></div><div class="chips">'+
+    (list.length?list.map(function(r,i){var c=isCont(r),lab=c?(base(r)?base(r)+" 續住":"續住"):r;return '<button class="chip'+(c?" cont":"")+'" type="button" data-act="chip" data-i="'+i+'" aria-label="移除 '+esc(lab)+'">'+esc(lab)+' <em>'+fmt(ptOf(r))+'</em><i aria-hidden="true">×</i></button>';}).join(""):'<p class="empty">還沒有登記。點下方房號或輸入房號加入。</p>')+'</div>'+
+    '<div class="mode" role="group" aria-label="登記類型"><button type="button" data-act="mode" data-m="out" aria-pressed="'+(S.mode==="out")+'">退房<small>依房號點數</small></button><button type="button" data-act="mode" data-m="cont" aria-pressed="'+(S.mode==="cont")+'">續住<small>每間 '+fmt(POINTS[CONT])+' 點</small></button></div>'+
+    '<div class="entry" data-form="room" autocomplete="off"><input id="roomInput" inputmode="numeric" placeholder="'+(S.mode==="cont"?"輸入續住房號，例如 301":"輸入房號，例如 301")+'" aria-label="房號"><button class="btn primary" type="button" data-submit>加入</button></div>'+
+    '<p class="err" id="entryErr"></p><div class="row"><button class="btn" type="button" data-act="undo"'+(list.length?"":" disabled")+'>撤銷上一間</button><button class="btn" type="button" data-act="clear"'+(list.length?"":" disabled")+'>清除這天</button></div></div>';
+  var taken={},topPt=Math.max.apply(null,ROOMS.map(function(r){return POINTS[r];}).concat([0]));
+  staff.forEach(function(u){if(u.id!==S.staffId)get(S.day,u.id).forEach(function(r){var b=base(r);if(b&&!taken[b])taken[b]=u.name;});});
+  h+='<div class="board">'+FLOORS.map(function(g){
+    return '<div class="floor"><h3>'+esc(g.f)+'</h3><div class="keys">'+g.rooms.map(function(r){
+      var ix=findRoom(r),mine=ix>=0,c=mine&&isCont(list[ix]),v=POINTS[r];
+      var cls="key"+(v>=topPt&&topPt>0?" top":"")+(mine?(c?" cont":" mine"):(taken[r]?" other":""));
+      return '<button class="'+cls+'" type="button" data-act="key" data-r="'+esc(r)+'" aria-pressed="'+mine+'">'+(taken[r]&&!mine?'<span class="by">'+esc(taken[r].charAt(0))+'</span>':"")+'<b>'+esc(r)+'</b><small>'+(c?"續住 "+fmt(POINTS[CONT]):fmt(v)+" 點")+'</small></button>';
+    }).join("")+'</div></div>';
+  }).join("")+'</div></div>';
+  return h;
+}
+function addRoom(r){
+  var list=get(S.day,S.staffId).slice();list.push(r);setRooms(S.day,S.staffId,list);
+  var b=base(r),others=hkActive().filter(function(u){return u.id!==S.staffId&&get(S.day,u.id).some(function(x){return base(x)===b;});});
+  if(b&&others.length)toast(b+" 今天 "+others.map(function(u){return u.name;}).join("、")+" 也登記了，請確認。");
+}
+function removeAt(i){var list=get(S.day,S.staffId).slice();list.splice(i,1);setRooms(S.day,S.staffId,list);}
+
+/* ================= 畫面：當月統計 ================= */
+function dayTable(screen){
+  var ps=monthStaff(),n=daysIn(S.month),mm=+S.month.split("-")[1],t={};
+  ps.forEach(function(u){t[u.id]=personMonth(u.id);});
+  var h='<thead><tr><th>日期</th>'+ps.map(function(u){return '<th>'+esc(u.name)+'</th>';}).join("")+'</tr></thead><tbody>';
+  for(var d=1;d<=n;d++){
+    var w=wd(S.month,d);
+    h+='<tr class="'+(screen?"go":"")+(w===0||w===6?" we":"")+'"'+(screen?' data-act="goto" data-d="'+d+'"':'')+'><td>'+mm+'/'+d+'（'+WEEK[w]+'）</td>';
+    ps.forEach(function(u){var v=pts(get(d,u.id));h+=screen?'<td class="'+(v?"":"zero")+'">'+fmt(v)+'</td>':'<td>'+(v?fmt(v):"")+'</td>';});
+    h+='</tr>';
+  }
+  function line(label,f){return '<tr><th>'+label+'</th>'+ps.map(function(u){return '<td>'+f(t[u.id])+'</td>';}).join("")+'</tr>';}
+  return h+'</tbody><tfoot>'+line("總點數",function(x){return fmt(x.pts);})+line("退房間數",function(x){return x.out;})+line("續住間數",function(x){return x.cont;})+line("總間數",function(x){return x.cnt;})+line("超額點數",function(x){return x.over?fmt(x.over):(screen?"0.0":"");})+'</tfoot>';
+}
+function vMonthly(){
+  var th=thresh();
+  var h='<div class="sum">'+monthStaff().map(function(u){
+    var x=personMonth(u.id);
+    return '<div class="card"><h3>'+esc(u.name)+(u.active?"":"（已停用）")+'</h3><strong>'+fmt(x.pts)+'</strong><p>點，退房 '+x.out+' 間，續住 '+x.cont+' 間</p>'+
+      (x.over?'<p class="over">超額點數：'+fmt(x.over)+' 點</p>':'<p>距門檻 '+tfmt(th)+' 點還差 '+fmt(r2(th-x.pts))+' 點</p>')+'</div>';
+  }).join("")+'</div>';
+  h+='<div class="tools"><button class="btn" type="button" data-act="printMonth">列印月報表</button><button class="btn" type="button" data-act="dlMonth">下載月報表</button><button class="btn" type="button" data-act="csv">下載 CSV</button></div>';
+  return h+'<div class="scroll"><table>'+dayTable(true)+'</table></div><p class="note" style="margin-top:10px">點日期那一列可以跳到該天登記。</p>';
+}
+
+/* ================= 畫面：後台（主管） ================= */
+function vAdmin(){
+  var u0=me();
+  var h='<div class="set"><h2>帳號與權限</h2><p class="note" style="margin:0">只有名單上、而且是「啟用」的手機號碼才能登入。人員離職時改成停用即可，過去的點數會保留。</p>'+
+    '<ul class="roles"><li><b>主管</b>：全部功能，包含這個後台。</li><li><b>櫃檯</b>：幫房務登記每日掃房、看當月統計和列印報表。</li><li><b>房務</b>：只能看自己的點數和每日明細。</li></ul>'+
+    '<div class="scroll" style="margin-top:12px;border:0"><table class="users"><thead><tr><th>姓名</th><th>手機號碼</th><th>角色</th><th>狀態</th><th></th></tr></thead><tbody>'+
+    DB.users.map(function(u){
+      var self=u.id===u0.id;
+      return '<tr class="'+(u.active?"":"off")+'"><td><input data-ch="uname" data-id="'+u.id+'" value="'+esc(u.name)+'" aria-label="姓名"></td>'+
+        '<td><input data-ch="uphone" data-id="'+u.id+'" value="'+u.phone+'" inputmode="tel" aria-label="手機號碼"></td>'+
+        '<td><select data-ch="urole" data-id="'+u.id+'" aria-label="角色"'+(self?" disabled":"")+'>'+["admin","desk","hk"].map(function(r){return '<option value="'+r+'"'+(u.role===r?" selected":"")+'>'+ROLE[r]+'</option>';}).join("")+'</select></td>'+
+        '<td><button class="btn" type="button" data-act="uToggle" data-id="'+u.id+'"'+(self?" disabled":"")+'>'+(u.active?"啟用中":"已停用")+'</button></td>'+
+        '<td><button class="btn" type="button" data-act="uDel" data-id="'+u.id+'"'+(self?" disabled":"")+'>刪除</button></td></tr>';
+    }).join("")+'</tbody></table></div>'+
+    '<div class="adduser" data-form="uadd" autocomplete="off"><input id="nuName" placeholder="姓名" aria-label="新人員姓名"><input id="nuPhone" inputmode="tel" placeholder="手機號碼" aria-label="新人員手機號碼"><select id="nuRole" aria-label="新人員角色"><option value="hk">房務</option><option value="desk">櫃檯</option><option value="admin">主管</option></select><button class="btn primary" type="button" data-submit>新增人員</button></div>'+
+    '<p class="err" id="uErr"></p><p class="note" style="margin:4px 0 0">你自己的角色和狀態不能在這裡修改，避免把自己鎖在外面。</p></div>';
+  h+='<div class="set"><h2>點數對照表</h2>'+vPoints()+'</div>';
+  h+='<div class="set"><h2>超額點數</h2>'+vThresh()+'</div>';
+  h+='<div class="set"><h2>示範資料</h2><p class="note">把所有人員、點數和登記紀錄恢復成一開始的示範內容。</p><button class="btn" type="button" data-act="reset">重設示範資料</button></div>';
+  return h;
+}
+function vPoints(){
+  var cur=tableFor(S.month),e=S.editPts;
+  if(!e){
+    var hist=DB.tables.filter(function(t){return t.from!==BASE;});
+    return '<p class="note">'+zhMonth(S.month)+'適用'+(cur.from===BASE?'原始點數':' '+zhMonth(cur.from)+'起的點數')+'。房號不在表內的不計點。</p>'+
+      '<div class="ref">'+Object.keys(POINTS).sort(function(a,b){return a===CONT?1:b===CONT?-1:byStr(a,b);}).map(function(r){return '<span><b>'+esc(r===CONT?"續住":r)+'</b>'+fmt(POINTS[r])+'</span>';}).join("")+'</div>'+
+      (hist.length?'<ul class="hist">'+sorted(hist).map(function(t){return '<li>'+zhMonth(t.from)+'起使用修改後的點數</li>';}).join("")+'</ul>':'')+
+      '<div class="row"><button class="btn primary" type="button" data-act="ptsEdit">編輯點數</button></div>';
+  }
+  return '<p class="note">修改後的點數從你選的月份開始套用，之前月份的點數不會改變。</p>'+
+    '<label class="inline">從 <input type="month" data-in="pts-from" value="'+esc(e.from)+'"> 開始適用</label>'+
+    '<div class="pe">'+e.rows.map(function(r,i){
+      return '<div>'+(r.fixed?'<span class="fixed">續住</span>':'<input data-in="pts-room" data-i="'+i+'" value="'+esc(r.room)+'" placeholder="房號" aria-label="房號">')+
+        '<input data-in="pts-pt" data-i="'+i+'" value="'+esc(r.pt)+'" inputmode="decimal" placeholder="點數" aria-label="點數">'+
+        (r.fixed?'':'<button class="btn" type="button" data-act="ptsRm" data-i="'+i+'" aria-label="刪除這個房號">刪除</button>')+'</div>';
+    }).join("")+'</div><p class="err" id="ptsErr"></p>'+
+    '<div class="row"><button class="btn" type="button" data-act="ptsAdd">新增房號</button><button class="btn primary" type="button" data-act="ptsSave">儲存點數</button><button class="btn" type="button" data-act="ptsCancel">取消</button></div>';
+}
+function vThresh(){
+  var e=S.editTh;
+  if(!e){
+    var hist=sorted(DB.thresholds.filter(function(t){return t.from!==BASE;}));
+    return '<p class="note">'+zhMonth(S.month)+'的門檻是 <b>'+tfmt(thresh())+'</b> 點。每位房務當月總點數超過門檻的部分，就是超額點數。</p>'+
+      (hist.length?'<ul class="hist">'+hist.map(function(t){return '<li>'+zhMonth(t.from)+'起門檻 '+tfmt(+t.value)+' 點</li>';}).join("")+'</ul>':'')+
+      '<div class="row"><button class="btn primary" type="button" data-act="thEdit">調整門檻</button></div>';
+  }
+  return '<p class="note">新的門檻從你選的月份開始套用，之前月份不會改變。</p>'+
+    '<div class="row inline"><label>從 <input type="month" data-in="th-from" value="'+esc(e.from)+'"> 開始</label><label>門檻 <input type="number" data-in="th-value" min="1" step="1" value="'+esc(e.value)+'" style="width:100px"> 點</label></div>'+
+    '<p class="err" id="thErr"></p><div class="row"><button class="btn primary" type="button" data-act="thSave">儲存門檻</button><button class="btn" type="button" data-act="thCancel">取消</button></div>';
+}
+
+/* ================= 報表 ================= */
+function dailyReport(){
+  var ps=hkActive().concat(monthStaff().filter(function(u){return !u.active&&get(S.day,u.id).length;})),to=0,tc=0,tp=0;
+  var rows=ps.map(function(u){
+    var l=get(S.day,u.id),out=[],ct=[];
+    l.forEach(function(r){if(isCont(r))ct.push(base(r)||"未填房號");else out.push(r);});
+    var v=pts(l);to+=out.length;tc+=ct.length;tp+=v;
+    return '<tr><td>'+esc(u.name)+'</td><td class="rooms">'+esc(out.join("、"))+'</td><td class="rooms">'+esc(ct.join("、"))+'</td><td>'+out.length+'</td><td>'+ct.length+'</td><td>'+fmt(v)+'</td></tr>';
+  }).join("");
+  var date=zhDate(S.month,S.day);
+  return {file:"房務日報_"+S.month+"-"+pad(S.day)+".html",title:"房務每日報表 "+date,
+    body:'<h1>房務每日報表</h1><p class="meta">'+date+'</p><table><thead><tr><th>房務人員</th><th>退房房號</th><th>續住房號</th><th>退房間數</th><th>續住間數</th><th>點數</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><th>合計</th><td></td><td></td><td>'+to+'</td><td>'+tc+'</td><td>'+fmt(tp)+'</td></tr></tfoot></table><div class="sign"><span>填表人</span><span>主管</span></div>'};
+}
+function monthlyReport(){
+  return {file:"房務月報_"+S.month+".html",title:"房務點數月報表 "+zhMonth(S.month),
+    body:'<h1>房務點數月報表</h1><p class="meta">'+zhMonth(S.month)+'，超額門檻 '+tfmt(thresh())+' 點</p><table class="m">'+dayTable(false)+'</table><div class="sign"><span>製表人</span><span>主管</span></div>'};
+}
+function printReport(r){$("printArea").innerHTML='<div class="rpt">'+r.body+'</div>';var o=document.title;document.title=r.title;window.print();setTimeout(function(){document.title=o;},1000);}
+function downloadReport(r){
+  var css=Array.prototype.map.call(document.querySelectorAll("style"),function(s){return s.textContent;}).join("").match(/\.rpt[^}]*\}/g).join("")+"@page{size:A4;margin:12mm}";
+  download(r.file,'<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>'+esc(r.title)+'</title><style>body{margin:16px;background:#fff}'+css+'.np{font:inherit;font-size:16px;padding:8px 16px;margin-bottom:16px}@media print{.np{display:none}body{margin:0}}</style></head><body><button class="np" onclick="window.print()">列印</button><div class="rpt">'+r.body+'</div></body></html>',"text/html;charset=utf-8");
+}
+function csv(){
+  var ps=monthStaff(),n=daysIn(S.month),q=function(s){return '"'+String(s).replace(/"/g,'""')+'"';},t={};
+  ps.forEach(function(u){t[u.id]=personMonth(u.id);});
+  var lines=[["日期"].concat(ps.map(function(u){return u.name;})).map(q).join(",")];
+  for(var d=1;d<=n;d++)lines.push([q(S.month+"-"+pad(d))].concat(ps.map(function(u){return fmt(pts(get(d,u.id)));})).join(","));
+  [["總點數","pts",1],["退房間數","out"],["續住間數","cont"],["總間數","cnt"],["超額點數","over",1]].forEach(function(r){
+    lines.push([q(r[0])].concat(ps.map(function(u){return r[2]?fmt(t[u.id][r[1]]):t[u.id][r[1]];})).join(","));
+  });
+  download("房務點數_"+S.month+".csv","\uFEFF"+lines.join("\r\n"),"text/csv;charset=utf-8");
+}
+
+/* ================= 主要繪製 ================= */
+function render(){
+  var u=me(),app=$("app");
+  if(!u){app.innerHTML=vLogin();var f=$(S.otp?"otp":"phone");if(f)f.focus();return;}
+  var allowed=u.role==="hk"?["mine"]:tabsFor(u).map(function(t){return t[0];});
+  if(allowed.indexOf(S.view)<0)S.view=allowed[0];
+  var body=S.view==="mine"?vMine(u):S.view==="daily"?vDaily():S.view==="monthly"?vMonthly():vAdmin();
+  app.innerHTML=vShell(u,body);
+  if(S.view==="daily"&&S.scrollDay){var sel=document.querySelector('.day[aria-pressed="true"]');if(sel&&sel.scrollIntoView)sel.scrollIntoView({block:"nearest",inline:"center"});S.scrollDay=false;}
+}
+
+/* ================= 動作 ================= */
+var ACT={
+  tab:function(el){S.view=el.dataset.v;S.editPts=S.editTh=null;S.scrollDay=true;render();window.scrollTo(0,0);},
+  logout:function(){DB.session=null;save();S.otp=null;S.loginErr="";S.view=null;render();},
+  fillPhone:function(el){S.otp=null;S.loginErr="";render();$("phone").value=el.dataset.phone;$("phone").focus();},
+  otpBack:function(){S.otp=null;S.loginErr="";render();},
+  day:function(el){S.day=+el.dataset.d;render();},
+  staff:function(el){S.staffId=el.dataset.id;render();},
+  mode:function(el){S.mode=el.dataset.m;render();},
+  key:function(el){var r=el.dataset.r,i=findRoom(r);if(i>=0)removeAt(i);else addRoom(S.mode==="cont"?CONT+r:r);render();},
+  chip:function(el){removeAt(+el.dataset.i);render();},
+  undo:function(){var l=get(S.day,S.staffId);if(l.length){removeAt(l.length-1);render();}},
+  clear:function(el){arm(el,"再按一次清除",function(){var n=userById(S.staffId).name;setRooms(S.day,S.staffId,[]);render();toast("已清除 "+n+" 這天的登記。");});},
+  "goto":function(el){S.day=+el.dataset.d;S.view="daily";S.scrollDay=true;render();window.scrollTo(0,0);},
+  openDay:function(el){var d=+el.dataset.d;S.openDay=S.openDay===d?null:d;render();},
+  printDay:function(){printReport(dailyReport());},
+  dlDay:function(){downloadReport(dailyReport());},
+  printMonth:function(){printReport(monthlyReport());},
+  dlMonth:function(){downloadReport(monthlyReport());},
+  csv:csv,
+  uToggle:function(el){if(!isAdmin())return;var u=userById(el.dataset.id);u.active=!u.active;save();render();toast(u.name+(u.active?" 已啟用，可以登入。":" 已停用，無法再登入。"));},
+  uDel:function(el){if(!isAdmin())return;var u=userById(el.dataset.id);arm(el,"再按一次刪除",function(){DB.users=DB.users.filter(function(x){return x.id!==u.id;});save();render();toast("已刪除 "+u.name+"。");});},
+  ptsEdit:function(){if(!isAdmin())return;var rows=ROOMS.map(function(k){return {room:k,pt:String(POINTS[k])};});rows.push({room:CONT,pt:String(POINTS[CONT]),fixed:true});S.editPts={from:S.month,rows:rows};render();},
+  ptsCancel:function(){S.editPts=null;render();},
+  ptsAdd:function(){var f=S.editPts.rows.pop();S.editPts.rows.push({room:"",pt:"1"});S.editPts.rows.push(f);render();var ins=document.querySelectorAll('[data-in="pts-room"]');if(ins.length)ins[ins.length-1].focus();},
+  ptsRm:function(el){S.editPts.rows.splice(+el.dataset.i,1);render();},
+  ptsSave:function(){
+    var e=S.editPts,out={},err="";
+    if(!/^\d{4}-\d{2}$/.test(e.from||""))err="請選擇開始適用的月份。";
+    e.rows.forEach(function(r){
+      if(err)return;var room=r.fixed?CONT:String(r.room).trim(),p=parseFloat(r.pt);
+      if(!room){err="有房號是空白的，請填寫或刪除那一列。";return;}
+      if(room===CONT&&!r.fixed){err="「續」不能當成房號。";return;}
+      if(room in out){err="房號 "+room+" 重複了。";return;}
+      if(isNaN(p)||p<0){err=(r.fixed?"續住":"房號 "+room)+" 的點數要填數字。";return;}
+      out[room]=r2(p);
+    });
+    if(err){$("ptsErr").textContent=err;return;}
+    DB.tables=DB.tables.filter(function(t){return t.from!==e.from;});DB.tables.push({from:e.from,points:out});save();
+    S.editPts=null;applyTable();render();toast("已儲存，"+zhMonth(e.from)+"起使用新的點數。");
+  },
+  thEdit:function(){if(!isAdmin())return;S.editTh={from:S.month,value:String(thresh())};render();},
+  thCancel:function(){S.editTh=null;render();},
+  thSave:function(){
+    var e=S.editTh,v=parseFloat(e.value);
+    if(!/^\d{4}-\d{2}$/.test(e.from||"")){$("thErr").textContent="請選擇開始的月份。";return;}
+    if(isNaN(v)||v<=0){$("thErr").textContent="門檻要填大於 0 的數字。";return;}
+    DB.thresholds=DB.thresholds.filter(function(t){return t.from!==e.from;});DB.thresholds.push({from:e.from,value:r2(v)});save();
+    S.editTh=null;render();toast("已儲存，"+zhMonth(e.from)+"起門檻改為 "+tfmt(r2(v))+" 點。");
+  },
+  reset:function(el){arm(el,"再按一次重設",function(){var uid=DB.session&&DB.session.uid;DB=seed();if(uid&&userById(uid))DB.session={uid:uid};save();S.editPts=S.editTh=null;applyTable();render();toast("已恢復示範資料。");});}
+};
+var FORM={
+  phone:function(){
+    var p=normPhone($("phone").value);
+    if(!/^09\d{8}$/.test(p)){S.loginErr="請輸入 09 開頭的 10 碼手機號碼。";render();$("phone").value=p;return;}
+    var u=DB.users.filter(function(x){return x.phone===p;})[0];
+    if(!u||!u.active){S.loginErr="這個號碼還沒有開通，請聯絡主管。";render();$("phone").value=p;return;}
+    S.otp={phone:p,code:String(100000+Math.floor(Math.random()*900000))};S.loginErr="";render();
+  },
+  otp:function(){
+    var c=normPhone($("otp").value);
+    if(c!==S.otp.code){S.loginErr="驗證碼不正確，請再試一次。";render();return;}
+    var u=DB.users.filter(function(x){return x.phone===S.otp.phone;})[0];
+    if(!u||!u.active){S.otp=null;S.loginErr="這個號碼已被停用，請聯絡主管。";render();return;}
+    DB.session={uid:u.id};save();S.otp=null;S.loginErr="";S.view=null;S.month=thisMonth;S.day=now.getDate();S.scrollDay=true;applyTable();render();
+  },
+  room:function(){
+    var inp=$("roomInput"),v=inp.value.trim().replace(/\s+/g,""),err=$("entryErr");
+    if(!v)return;
+    var c=S.mode==="cont";
+    if(/^續住?/.test(v)){c=true;v=v.replace(/^續住?/,"");}
+    if(!v){err.textContent="請輸入續住的房號。";return;}
+    if(!(v in POINTS)||v===CONT){err.textContent="找不到房號 "+v+"，請確認後再輸入。";return;}
+    if(findRoom(v)>=0){err.textContent=v+" 已經在今天的清單裡。";return;}
+    addRoom(c?CONT+v:v);render();$("roomInput").focus();
+  },
+  uadd:function(){
+    if(!isAdmin())return;
+    var name=$("nuName").value.trim(),p=normPhone($("nuPhone").value),role=$("nuRole").value,err=$("uErr");
+    if(!name){err.textContent="請輸入姓名。";return;}
+    if(!/^09\d{8}$/.test(p)){err.textContent="手機號碼要是 09 開頭的 10 碼。";return;}
+    if(DB.users.some(function(u){return u.phone===p;})){err.textContent="這個號碼已經在名單上了。";return;}
+    var max=0;DB.users.forEach(function(u){var n=parseInt(u.id.slice(1),10)||0;if(n>max)max=n;});
+    DB.users.push({id:"u"+(max+1),name:name,phone:p,role:role,active:true});save();render();
+    toast("已新增 "+name+"（"+ROLE[role]+"），用 "+showPhone(p)+" 就能登入。");
+  }
+};
+var CHANGE={
+  uname:function(el){var u=userById(el.dataset.id),v=el.value.trim();if(!v){toast("姓名不能空白。");render();return;}u.name=v;save();render();},
+  uphone:function(el){
+    var u=userById(el.dataset.id),p=normPhone(el.value);
+    if(!/^09\d{8}$/.test(p)){toast("手機號碼要是 09 開頭的 10 碼。");render();return;}
+    if(DB.users.some(function(x){return x.phone===p&&x.id!==u.id;})){toast("這個號碼已經有人使用。");render();return;}
+    u.phone=p;save();render();toast(u.name+" 的手機號碼已更新，之後要用新號碼登入。");
+  },
+  urole:function(el){var u=userById(el.dataset.id);u.role=el.value;save();render();toast(u.name+" 的角色改為「"+ROLE[u.role]+"」。");}
+};
+
+document.addEventListener("click",function(e){
+  var el=e.target.closest("[data-act]");if(!el||el.disabled)return;
+  var f=ACT[el.dataset.act];if(f)f(el,e);
+});
+/* 不用表單送出，改用按鈕與 Enter 鍵，避免在預覽或內嵌畫面中被瀏覽器擋住 */
+function runForm(el){var f=el.closest("[data-form]");if(f&&FORM[f.dataset.form])FORM[f.dataset.form]();}
+document.addEventListener("click",function(e){var b=e.target.closest("[data-submit]");if(b&&!b.disabled)runForm(b);});
+document.addEventListener("keydown",function(e){
+  if(e.key!=="Enter"||e.isComposing)return;
+  var t=e.target;if(t.tagName!=="INPUT"||!t.closest("[data-form]"))return;
+  e.preventDefault();runForm(t);
+});
+document.addEventListener("submit",function(e){
+  var f=e.target.closest("[data-form]");if(!f)return;e.preventDefault();
+  var h=FORM[f.dataset.form];if(h)h();
+});
+document.addEventListener("change",function(e){
+  var t=e.target;
+  if(t.id==="month"){if(!t.value)return;S.month=t.value;S.day=S.month===thisMonth?now.getDate():1;S.openDay=null;S.editPts=S.editTh=null;S.scrollDay=true;applyTable();render();return;}
+  if(t.dataset.ch&&CHANGE[t.dataset.ch]&&isAdmin())CHANGE[t.dataset.ch](t);
+});
+document.addEventListener("input",function(e){
+  var t=e.target,k=t.dataset.in;if(!k)return;
+  if(k==="pts-from")S.editPts.from=t.value;
+  else if(k==="pts-room")S.editPts.rows[+t.dataset.i].room=t.value;
+  else if(k==="pts-pt")S.editPts.rows[+t.dataset.i].pt=t.value;
+  else if(k==="th-from")S.editTh.from=t.value;
+  else if(k==="th-value")S.editTh.value=t.value;
+  var er=$("ptsErr")||$("thErr");if(er)er.textContent="";
+  if(t.id==="roomInput"&&$("entryErr"))$("entryErr").textContent="";
+});
+document.addEventListener("input",function(e){if(e.target.id==="roomInput"&&$("entryErr"))$("entryErr").textContent="";});
+
+render();
+})();
+</script>
+</body>
+</html>
